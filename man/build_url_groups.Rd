@@ -7,7 +7,7 @@
 build_url_groups(urls = NULL)
 }
 \arguments{
-\item{url}{Character vector of urls of the get request}
+\item{urls}{Character vector of urls of the get request}
 }
 \value{
 named list

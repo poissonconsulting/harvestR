@@ -23,6 +23,8 @@ get_request(
 
 \item{email}{Character email address for API call. (Optional)}
 
+\item{auto_retry}{Logical scalar.}
+
 \item{verbose}{Logical scalar. Should the function provide verbose messaging back on each step?}
 
 \item{...}{Internally used to indicated that the call is a retry.}
@@ -33,10 +35,6 @@ response object
 \description{
 Submits get requests to the Harvest API v2 with retry functionality.
 Errors are messaged to the execution environment and set to NULL allowing user-facing function returns to provide data frame output.
-}
-\examples{
-
-
 }
 \references{
 \url{https://id.getharvest.com/developers}

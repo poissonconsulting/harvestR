@@ -24,6 +24,10 @@ get_table(
 
 \item{email}{Character email address for API call. (Optional)}
 
+\item{query}{A query.}
+
+\item{auto_retry}{Logical scalar.}
+
 \item{strategy}{Character vector passed to future::plan strategy parameter. Examples include 'sequential', 'multiprocess', & 'multicore'.}
 
 \item{verbose}{Logical scalar. Should the function provide verbose messaging back on each step?}
@@ -33,11 +37,13 @@ Submits get requests to the Harvest API v2. The function is a wrapper around the
 }
 \examples{
 
+\dontrun{
 user_id <- 'your_user_id'
 api_key <- paste0('Bearer ','you_api_key')
 get_table(table = 'projects', user = user_id,key = api_key)
-get_table(table = 'time_entries' , user = user_id, key = api_key, email = 'your_email',query = list(from = '2018-01-01', to = '2018-03-31'))
-
+get_table(table = 'time_entries' , user = user_id, key = api_key,
+  email = 'your_email',query = list(from = '2018-01-01', to = '2018-03-31'))
+}
 }
 \references{
 \url{https://id.getharvest.com/developers}

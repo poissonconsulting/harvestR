@@ -4,6 +4,7 @@
 #'
 #' @param urls Named list of character vectors of urls in groups from build_url_groups function.
 #' @param strategy Character vector passed to future::plan strategy parameter. Examples include 'sequential', 'multiprocess', & 'multicore'.
+#' @param group_name Group name.
 #' @inheritParams get_request
 #'
 #' @return named list
@@ -45,12 +46,12 @@ get_requests <- function(urls = NULL,
 
   start_time <- Sys.time()
   # urls is a character vector no greater than 100 in length
-  responses <- furrr::future_map(urls, function(x) harvestR:::get_request(url = x,
-                                                                          user = user,
-                                                                          key = key,
-                                                                          email = email,
-                                                                          auto_retry = auto_retry,
-                                                                          verbose = verbose))
+  responses <- furrr::future_map(urls, function(x) get_request(url = x,
+                                                               user = user,
+                                                               key = key,
+                                                               email = email,
+                                                               auto_retry = auto_retry,
+                                                               verbose = verbose))
   # If responses are returned in less than 15 seconds, R waits to avoid Harvest rate limiting
   end_time <- Sys.time()
   time <- lubridate::seconds(end_time - start_time)

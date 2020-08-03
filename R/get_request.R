@@ -8,11 +8,11 @@
 #' @param key  Character key (e.g. key = 'Bearer <secret key>') for API authentication. Register at \href{https://id.getharvest.com/developers}{Harvest Developers}.
 #' @param email Character email address for API call. (Optional)
 #' @param verbose Logical scalar. Should the function provide verbose messaging back on each step?
+#' @param auto_retry Logical scalar.
 #' @param ... Internally used to indicated that the call is a retry.
 #'
 #' @return response object
 #'
-#' @examples
 #'
 #'
 #' @author Mark Druffel, \email{mdruffel@propellerpdx.com}

@@ -2,8 +2,7 @@
 #'
 #' Harvest API v2 only accepts 100 urls every 15 seconds. build_url_groups breaks urls into groups of 100 naming the last group, "Last_Group". Groups run requests and then R sleeps for 15 seconds get requests to the Harvest API v2. The function is a wrapper around the httr::GET function and safely returns the httr result as result or error.
 #'
-#' @param url Character vector of urls of the get request
-#' @inheritParams get_request
+#' @param urls Character vector of urls of the get request
 #'
 #' @return named list
 #'

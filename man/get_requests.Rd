@@ -18,6 +18,8 @@ get_requests(
 \arguments{
 \item{urls}{Named list of character vectors of urls in groups from build_url_groups function.}
 
+\item{group_name}{Group name.}
+
 \item{user}{Character account number (e.g. user = '12345') for authentication. Register at \href{https://id.getharvest.com/developers}{Harvest Developers}.}
 
 \item{key}{Character key (e.g. key = 'Bearer <secret key>') for API authentication. Register at \href{https://id.getharvest.com/developers}{Harvest Developers}.}
@@ -25,6 +27,8 @@ get_requests(
 \item{email}{Character email address for API call. (Optional)}
 
 \item{verbose}{Logical scalar. Should the function provide verbose messaging back on each step?}
+
+\item{auto_retry}{Logical scalar.}
 
 \item{strategy}{Character vector passed to future::plan strategy parameter. Examples include 'sequential', 'multiprocess', & 'multicore'.}
 }
