@@ -21,6 +21,7 @@
 #' \url{https://id.getharvest.com/developers}
 #' \url{https://help.getharvest.com/api-v2}
 #'
+#' @import httr
 #' @importFrom magrittr %>%
 #'
 #' @export
@@ -36,64 +37,43 @@ get_table <- function(
   strategy = 'sequential',
   verbose=FALSE){
 
-  # Setup Vars --------------------------------------------------------------
 
-  url <- paste0('v2/', table) %>%
-    httr::modify_url(url="https://api.harvestapp.com",
-                     path=.,
-                     query=query)
+  if(!is.null(key) && !grepl("^Bearer ", key))
+    key <- paste0('Bearer ', key)
 
+  if(!is.null(query$return_df)){
+    return_df <- query[[length(query)]]
+    query <- query[[1:(length(query)-1)]]}
 
-  # Check Date Params Format ------------------------------------------------
+  if(is.null(query$page)){query$page <- '1'}
 
-  check_date_format(query = query)
+  url <- paste0('v2/',table) %>% httr::modify_url(url="https://api.harvestapp.com",path=.,query=query)
 
-  # Get Request -------------------------------------------------------------
+  # The curl version installed on EC2 / Lambda is slightly different from local.
+  # Harvest's API responds that it can support HTTP/2 when it doesn't seem to be able to
+  # Due to curl version or possibly some other factor, local curl figures this out and gets by it, using HTTP/1.1 while the one on EC2 does not and uses HTTP/2, resulting in failure.
+  # http_version=2 forces HTTP/1.1
+  # Full http_version options can be seen here https://github.com/curl/curl/blob/master/include/curl/curl.h by searching for "http_version"
+  # Full httr docs https://cran.r-project.org/web/packages/httr/httr.pdf
 
-  response <- get_request(url = url,
-                          user = user,
-                          key = key,
-                          email = email,
-                          auto_retry = auto_retry,
-                          verbose=verbose)
-  # If not a bad request and verbose is on, provide message. If request is bad response$total_pages will be NULL
-  if(verbose == T & is.null(response$total_pages) == F){
-    if(response$total_pages > 1){
-      message(glue::glue('Initial request shows {response$total_entries} records. Initiating the remaining {response$total_pages-1} requests.'))
-    }
-  }
-  if(is.null(response)){
-    stop('Initial request failed. See warning message for details:')
-  }
+  response_df <- url %>%
+    purrr::map(., function(x) httr::with_config(config=config(verbose=verbose, http_version=2), httr::GET(x,httr::add_headers("Harvest-Account-ID" = user,Authorization = key,'User-Agent=Propeller R API Helper (mdruffel@propellerpdx.com)', 'From' = email), query = query))) %>%
+    purrr::map(., function(x) httr::content(x, as="text", encoding = "UTF-8")) %>%
+    purrr::map(., function(x) jsonlite::fromJSON(x, flatten = T))
 
-  # Get requests (multi-page) -----------------------------------------------
+  next_page <- response_df %>% purrr::map('next_page')
 
-  if(response$total_pages > 1){
-    # Pull the dataframe from the initial get request
-    return_df <- response[[table]]
-    # Build urls for the remaining requests
-    urls <- purrr::map(2:response$total_pages, function(x) httr::modify_url(url, query = list(page = x)))
-    # Build url groups by sets of 100 to avoid rate limiting by Harvest
-    url_groups <- build_url_groups(urls = urls)
-    # Pass url and the name of the url group,
-    # last group is named 'Last_Group' which keeps get_requests from pausing if the last group finishes in less than 15 seconds
-    responses <- purrr::map2(url_groups, names(url_groups), function(x, y) get_requests(urls = x,
-                                                                                        group_name = y,
-                                                                                        user = user,
-                                                                                        key = key,
-                                                                                        email = email,
-                                                                                        auto_retry = auto_retry,
-                                                                                        strategy = strategy,
-                                                                                        verbose=verbose))
-    # responses uses map2 around a future_map call so it creates another level of list.
-    # Climb down the list and get the tables, then bind them all into a data frame
-    return_dfs <-     purrr::map(responses, function(x)
-      purrr::map(x, function(y) y[[table]]) %>% dplyr::bind_rows()) %>%
-      dplyr::bind_rows()
-    # Add responses to the initial response
-    return_df <- dplyr::bind_rows(return_df, return_dfs)
-  } else {
-    return_df <- response[[table]]
-  }
-  return(return_df)
+  if(!exists('return_df')){return_df <- NULL}
+  return_df <- response_df %>%
+    purrr::map(.,paste0(table)) %>%
+    purrr::flatten_df(.) %>%
+    dplyr::bind_rows(.,return_df)
+
+  query$page <- paste0(unlist(next_page))
+  if(is.null(unlist(next_page))){return(return_df)}else{
+    query <- list(query=query,return_df=return_df)
+
+    if(response_df %>% purrr::map_dbl(.,'total_pages')>99){naptime::naptime(.1)}
+
+    get_table(table=table,user=user,key=key,email=email,query=query)}
 }
